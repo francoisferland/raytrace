@@ -39,11 +39,44 @@ def intersect_sphere(O, D, S, R):
             return t1 if t0 < 0 else t0
     return np.inf
 
+def intersect_triangle(O, D, a, b, c):
+    # Test if the (O-D) ray intersects with the triangle formed by (a,b,c).
+    EPS = 1e-6
+
+    # Moller-Trumbore
+
+    ab = b - a
+    ac = c - a
+    pv = np.cross(D, ac)
+    det = np.dot(ab, pv)
+
+    if (abs(det) < EPS):
+        return np.inf # Ray parallel to the plane
+    
+    idet = 1 / det
+    tv = O - a
+
+    u = np.dot(tv, pv) * idet
+    if (u < 0) | (u > 1):
+        return np.inf
+    
+    qv = np.cross(tv, ab)
+    v = np.dot(D, qv) * idet
+
+    if (v < 0) | (v > 1):
+        return np.inf
+    
+    return np.abs(np.dot(tv, D))
+
+ 
+
 def intersect(O, D, obj):
     if obj['type'] == 'plane':
         return intersect_plane(O, D, obj['position'], obj['normal'])
     elif obj['type'] == 'sphere':
         return intersect_sphere(O, D, obj['position'], obj['radius'])
+    elif obj['type'] == 'triangle':
+        return intersect_triangle(O, D, obj['p1'], obj['p2'], obj['p3'])
 
 def get_normal(obj, M):
     # Find normal.
@@ -51,6 +84,8 @@ def get_normal(obj, M):
         N = normalize(M - obj['position'])
     elif obj['type'] == 'plane':
         N = obj['normal']
+    elif obj['type'] == 'triangle':
+        return np.array([0,0,-1]) # TODO!
     return N
     
 def get_color(obj, M):
@@ -101,15 +136,29 @@ def add_plane(position, normal):
         color=lambda M: (color_plane0 
             if (int(M[0] * 2) % 2) == (int(M[2] * 2) % 2) else color_plane1),
         diffuse_c=.75, specular_c=.5, reflection=.25)
-    
+
+def add_triangle(p1, p2, p3, color):
+    return dict(type="triangle", p1=np.array(p1), p2=np.array(p2), p3=np.array(p3),
+                color=np.array(color), reflection=.5)
 # List of objects.
 color_plane0 = 1. * np.ones(3)
 color_plane1 = 0. * np.ones(3)
-scene = [add_sphere([.75, .1, 1.], .6, [0., 0., 1.]),
-         add_sphere([-.75, .1, 2.25], .6, [.5, .223, .5]),
-         add_sphere([-2.75, .1, 3.5], .6, [1., .572, .184]),
+scene = [#add_sphere([.75, .1, 1.], .6, [0., 0., 1.]),
+         add_sphere([0.5, 0.5, 1], 0.1, [1,1,0]),
+      #   add_sphere([-.75, .1, 2.25], .6, [.5, .223, .5]),
+      #   add_sphere([-2.75, .1, 3.5], .6, [1., .572, .184]),
+         add_triangle([-1,0.4,2], [1,0.4,2], [0,0.75,2], [.8,.8,.8]),
          add_plane([0., -.5, 0.], [0., 1., 0.]),
     ]
+
+#import random
+#for i in range(0, 20):
+#
+#    sx = random.random()*4.0 - 2.0
+#    sy = random.random()*2.0 - 1.0
+#    sz = random.random()*4.0 - 2.0
+#    sr = random.random() / 4
+#    scene.append(add_sphere([sx,sy,sz], sr, [0.5,0.5,0.5]))
 
 # Light position and color.
 L = np.array([5., 5., -10.])
@@ -121,24 +170,34 @@ diffuse_c = 1.
 specular_c = 1.
 specular_k = 50
 
-depth_max = 5  # Maximum number of light reflections.
+depth_max = 2 # Maximum number of light reflections.
 col = np.zeros(3)  # Current color.
-O = np.array([0., 0.35, -1.])  # Camera.
-Q = np.array([0., 0., 0.])  # Camera pointing to.
+O = np.array([0., 0.35, -5.])  # Camera.
+Q = np.array([0., 0., -4.])  # Camera pointing to.
 img = np.zeros((h, w, 3))
 
 r = float(w) / h
 # Screen coordinates: x0, y0, x1, y1.
 S = (-1., -1. / r + .25, 1., 1. / r + .25)
 
+# QUICK TEST
+D = np.array([0,0,1])
+d = intersect_triangle(O, D,
+    np.array([-5, -5, 5]),
+    np.array([ 5, -5, 5]),
+    np.array([0, 5, 5]))
+print("tri test", d)
+            
 # Loop through all pixels.
 for i, x in enumerate(np.linspace(S[0], S[2], w)):
     if i % 10 == 0:
         print(i / float(w) * 100, "%")
+
     for j, y in enumerate(np.linspace(S[1], S[3], h)):
         col[:] = 0
         Q[:2] = (x, y)
         D = normalize(Q - O)
+
         depth = 0
         rayO, rayD = O, D
         reflection = 1.
