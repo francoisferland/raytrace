@@ -43,7 +43,7 @@ def intersect_triangle(O, D, a, b, c):
     # Test if the (O-D) ray intersects with the triangle formed by (a,b,c).
     EPS = 1e-6
 
-    # Moller-Trumbore
+    # Moller-Trumbore - https://www.scratchapixel.com/lessons/3d-basic-rendering/ray-tracing-rendering-a-triangle/moller-trumbore-ray-triangle-intersection.html
 
     ab = b - a
     ac = c - a
@@ -63,12 +63,11 @@ def intersect_triangle(O, D, a, b, c):
     qv = np.cross(tv, ab)
     v = np.dot(D, qv) * idet
 
-    if (v < 0) | (v > 1):
+    if (v < 0) | ((u+v) > 1):
         return np.inf
     
-    return np.abs(np.dot(tv, D))
-
- 
+    t = np.dot(ac, qv) * idet
+    return t
 
 def intersect(O, D, obj):
     if obj['type'] == 'plane':
