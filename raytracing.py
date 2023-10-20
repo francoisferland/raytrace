@@ -1,5 +1,12 @@
+# SADS A23 - Raytracer
+# Code adapted from https://github.com/jamesbowman/raytrace, see LICENSE for info.
+# Added triangle intersection and Stanford bunny loader.
+
 from PIL import Image
 import numpy as np
+
+import bunny
+import random
 
 w = 400
 h = 300
@@ -65,7 +72,7 @@ def intersect_triangle(O, D, a, b, c):
 
     if (v < 0) | ((u+v) > 1):
         return np.inf
-    
+
     t = np.dot(ac, qv) * idet
     return t
 
@@ -143,21 +150,38 @@ def add_triangle(p1, p2, p3, color):
 color_plane0 = 1. * np.ones(3)
 color_plane1 = 0. * np.ones(3)
 scene = [#add_sphere([.75, .1, 1.], .6, [0., 0., 1.]),
-         add_sphere([0.5, 0.5, 1], 0.1, [1,1,0]),
       #   add_sphere([-.75, .1, 2.25], .6, [.5, .223, .5]),
       #   add_sphere([-2.75, .1, 3.5], .6, [1., .572, .184]),
-         add_triangle([-1,0.4,2], [1,0.4,2], [0,0.75,2], [.8,.8,.8]),
+      #   add_triangle([-1,0.4,2], [1,0.4,2], [0,0.75,2], [.8,.8,.8]),
          add_plane([0., -.5, 0.], [0., 1., 0.]),
     ]
 
-#import random
-#for i in range(0, 20):
+# Sample cube:
+#vertices = [
+#    (-1, 0, -1), (1, 0, -1), (1, 0, 1), (-1, 0, 1),
+#    (-1, 2, -1), (1, 2, -1), (1, 2, 1), (-1, 2, 1)
+#]
+#indices = [
+#    (0, 1, 2), (2, 3, 0),       # Bottom
+#    (0, 1, 5), (5, 4, 0),       # Front
+#    (4, 5, 6), (6, 7, 4),       # Top
+#    (1, 2, 6), (6, 5, 1),       # Right
+#    (0, 4, 7), (7, 3, 0),       # Left
+#    (2, 3, 7), (7, 6, 2),       # Back
 #
-#    sx = random.random()*4.0 - 2.0
-#    sy = random.random()*2.0 - 1.0
-#    sz = random.random()*4.0 - 2.0
-#    sr = random.random() / 4
-#    scene.append(add_sphere([sx,sy,sz], sr, [0.5,0.5,0.5]))
+#]
+
+# Adding the Stanford bunny:
+vertices, indices = bunny.load("bun_zipper_res4.ply")
+
+for i in random.sample(range(0, len(indices)), len(indices) / 4): # Random sample of 25% of the triangle
+#for i in range(0,len(indices)):
+    p1 = np.array(vertices[indices[i][0]])
+    p2 = np.array(vertices[indices[i][1]])
+    p3 = np.array(vertices[indices[i][2]])
+    scene.append(
+        add_triangle(p1, p2, p3, [.8, .8, .8])
+    )
 
 # Light position and color.
 L = np.array([5., 5., -10.])
@@ -169,24 +193,16 @@ diffuse_c = 1.
 specular_c = 1.
 specular_k = 50
 
-depth_max = 2 # Maximum number of light reflections.
+depth_max = 1 # Maximum number of light reflections.
 col = np.zeros(3)  # Current color.
-O = np.array([0., 0.35, -5.])  # Camera.
-Q = np.array([0., 0., -4.])  # Camera pointing to.
+O = np.array([0., 0.35, -3.])  # Camera.
+Q = O + np.array([0, 0, 1]) # Camera pointing to (absolute coords).
 img = np.zeros((h, w, 3))
 
 r = float(w) / h
 # Screen coordinates: x0, y0, x1, y1.
 S = (-1., -1. / r + .25, 1., 1. / r + .25)
 
-# QUICK TEST
-D = np.array([0,0,1])
-d = intersect_triangle(O, D,
-    np.array([-5, -5, 5]),
-    np.array([ 5, -5, 5]),
-    np.array([0, 5, 5]))
-print("tri test", d)
-            
 # Loop through all pixels.
 for i, x in enumerate(np.linspace(S[0], S[2], w)):
     if i % 10 == 0:

@@ -1,4 +1,4 @@
-def load(fname):
+def load(fname, scale = 5.):
     # Loads a PLY file with the Stanford bunny mesh.
     # Expects a list of vertices and faces (triangles only) based on the original zipper files.
 
@@ -37,7 +37,7 @@ def load(fname):
 
         elif (state == STATE_GET_VX):
                 (xs,ys,zs) = line.split(" ")[:3]
-                vx.append((float(xs), float(ys), float(zs)))
+                vx.append((scale * float(xs), scale* float(ys), scale * float(zs)))
                 vc = vc - 1
                 if (vc == 0):
                      state = STATE_GET_FS
