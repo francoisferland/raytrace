@@ -43,7 +43,7 @@ def load(fname, scale = 5.):
                      state = STATE_GET_FS
 
         elif (state == STATE_GET_FS):
-                (i1s, i2s, i3s) = line.split(" ")[:3]
+                (i1s, i2s, i3s) = line.split(" ")[1:4]
                 fs.append((int(i1s), int(i2s), int(i3s)))
                 fc = fc - 1
                 if (fc == 0):

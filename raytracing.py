@@ -8,8 +8,8 @@ import numpy as np
 import bunny
 import random
 
-w = 400
-h = 300
+w = 200
+h = 150
 
 def normalize(x):
     x /= np.linalg.norm(x)
@@ -174,7 +174,7 @@ scene = [#add_sphere([.75, .1, 1.], .6, [0., 0., 1.]),
 # Adding the Stanford bunny:
 vertices, indices = bunny.load("bun_zipper_res4.ply")
 
-for i in random.sample(range(0, len(indices)), len(indices) / 4): # Random sample of 25% of the triangle
+for i in random.sample(range(0, len(indices)), int(len(indices) / 10)): # Random sample of 10% of the triangle
 #for i in range(0,len(indices)):
     p1 = np.array(vertices[indices[i][0]])
     p2 = np.array(vertices[indices[i][1]])
